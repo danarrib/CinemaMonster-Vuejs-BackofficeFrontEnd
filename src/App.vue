@@ -33,7 +33,20 @@
 
 <script>
 
-import { mdiFormatListBulleted, mdiInformation  } from '@mdi/js';
+import { 
+  mdiHome,
+  mdiCity,
+  mdiHomeCity,
+  mdiTheater,
+  mdiFilmstrip,
+  mdiSeat,
+  mdiProjectorScreen,
+  mdiMovie,
+  mdiMovieCog,
+  mdiCreditCardMultiple,
+  mdiAccountMultiple,
+  mdiReceipt,
+} from '@mdi/js';
 
 export default {
   name: 'App',
@@ -44,8 +57,29 @@ export default {
   data: () => ({
     // Menu items
     items: [
-      { icon: mdiFormatListBulleted, title: 'Home', to: '/' },
-      { icon: mdiInformation, title: 'About', to: '/about' },
+      { icon: mdiHome, title: 'Home', to: '/' },
+      { icon: mdiCity, title: 'States', to: '/state' },
+      { icon: mdiHomeCity, title: 'Cities', to: '/city' },
+      { icon: mdiTheater, title: 'Cinemas', to: '/cinema' },
+      { icon: mdiProjectorScreen, title: 'Auditorium Types', to: '/auditoriumtype' },
+      { icon: mdiMovie, title: 'Movies', to: '/movie' },
+      { icon: mdiMovieCog, title: 'Movie Genres', to: '/moviegenre' },
+      { icon: mdiFilmstrip, title: 'Movie Sessions', to: '/mobiesession' },
+      { icon: mdiCreditCardMultiple, title: 'Payment Methods', to: '/paymentmethod' },
+      { icon: mdiSeat, title: 'Seat Types', to: '/seattype' },
+      { icon: mdiAccountMultiple, title: 'Customers', to: '/customer' },
+      { icon: mdiReceipt, title: 'Orders', to: '/order' },
+
+      /*
+Auditorium Types
+Movies
+Movie Genres
+Movie Sessions
+Orders
+Customers
+Payment Methods
+Seat Types
+       */
     ],
   }),
 };
