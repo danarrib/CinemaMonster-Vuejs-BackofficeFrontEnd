@@ -4,14 +4,14 @@
       <template>
         <v-data-table
           :headers="headers"
-          :items="states"
-          sort-by="codState"
+          :items="moviegenres"
+          sort-by="name"
           class="elevation-1"
           disable-pagination
         >
           <template v-slot:top>
             <v-toolbar flat>
-              <v-toolbar-title>States</v-toolbar-title>
+              <v-toolbar-title>Movie Genres</v-toolbar-title>
               <v-divider class="mx-4" inset vertical></v-divider>
               <v-spacer></v-spacer>
               
@@ -29,10 +29,7 @@
                       <v-container>
                         <v-row>
                           <v-col cols="12" sm="12" md="6">
-                            <v-text-field v-model="editedItem.name" label="State name" :rules="nameRules" />
-                          </v-col>
-                          <v-col cols="12" sm="12" md="6">
-                            <v-text-field v-model="editedItem.codState" label="State code" :rules="codStateRules" />
+                            <v-text-field v-model="editedItem.name" label="Movie Genre name" :rules="nameRules" />
                           </v-col>
                         </v-row>
                       </v-container>
@@ -89,38 +86,31 @@
   export default {
     data () {
       return {
-        codStateRules: [
-          v => !!v || 'State code is required',
-          v => v.length === 2 || 'State code length must be 2 characters',
-        ],
         nameRules: [
-          v => !!v || 'State name is required',
-          v => v.length > 3 || 'State name length must be more  than 3 characters',
+          v => !!v || 'Movie Genre name is required',
+          v => v.length > 3 || 'Movie Genre name length must be more  than 3 characters',
         ],
         valid: false,
         headers: [
           {
-            text: 'State Name',
+            text: 'Movie Genre Name',
             align: 'start',
             sortable: true,
             value: 'name',
           },
-          { text: 'Code', value: 'codState' },
           { text: 'Actions', value: 'actions', sortable: false },
         ],
-        states: [],
+        moviegenres: [],
         dialog: false,
         dialogDelete: false,
         editedIndex: -1,
         editedItem: {
           id: 0,
           name: '',
-          codState: '',
         },
         defaultItem: {
           id: 0,
           name: '',
-          codState: '',
         },
       }
     },
@@ -142,36 +132,36 @@
     },
     methods: {
       initialize () {
-        getAll('State')
+        getAll('MovieGenre')
         .then((res) => {
-          this.states = res.data;
+          this.moviegenres = res.data;
         })
         .catch((error) => {
           console.log(error);
-            this.$swal.fire({ title: 'Error', text: 'Error getting states list', icon: 'error'});
+            this.$swal.fire({ title: 'Error', text: 'Error getting movie genres list', icon: 'error'});
         });
       },
       editItem (item) {
-        this.editedIndex = this.states.indexOf(item)
+        this.editedIndex = this.moviegenres.indexOf(item)
         this.editedItem = Object.assign({}, item)
         this.dialog = true
       },
 
       deleteItem (item) {
-        this.editedIndex = this.states.indexOf(item)
+        this.editedIndex = this.moviegenres.indexOf(item)
         this.editedItem = Object.assign({}, item)
         this.dialogDelete = true
       },
 
       deleteItemConfirm () {
-        delEntity('State', this.editedItem)
+        delEntity('MovieGenre', this.editedItem)
         .then(() => {
             this.initialize();
-            this.$swal.fire({ title: 'Success', text: 'State deleted', icon: 'success'});
+            this.$swal.fire({ title: 'Success', text: 'Movie Genre deleted', icon: 'success'});
         })
         .catch((error) => {
           console.log(error);
-          this.$swal.fire({ title: 'Error', text: 'Error deleting state', icon: 'error'});
+          this.$swal.fire({ title: 'Error', text: 'Error deleting movie genre', icon: 'error'});
         });
         this.closeDelete()
       },
@@ -194,24 +184,24 @@
 
       save () {
         if (this.editedIndex > -1) { // Update
-          updEntity('State', this.editedItem)
+          updEntity('MovieGenre', this.editedItem)
           .then(() => {
             this.initialize();
-            this.$swal.fire({ title: 'Success', text: 'State updated', icon: 'success'});
+            this.$swal.fire({ title: 'Success', text: 'Movie Genre updated', icon: 'success'});
           })
           .catch((error) => {
             console.log(error);
-            this.$swal.fire({ title: 'Error', text: 'Error updating state', icon: 'error'});
+            this.$swal.fire({ title: 'Error', text: 'Error updating movie genre', icon: 'error'});
           });
         } else { // Add
-          addEntity('State', this.editedItem)
+          addEntity('MovieGenre', this.editedItem)
           .then(() => {
             this.initialize();
-            this.$swal.fire({ title: 'Success', text: 'State added', icon: 'success'});
+            this.$swal.fire({ title: 'Success', text: 'Movie Genre added', icon: 'success'});
           })
           .catch((error) => {
             console.log(error);
-            this.$swal.fire({ title: 'Error', text: 'Error adding state', icon: 'error'});
+            this.$swal.fire({ title: 'Error', text: 'Error adding movie genre', icon: 'error'});
           });
         }
         this.close()

@@ -4,14 +4,14 @@
       <template>
         <v-data-table
           :headers="headers"
-          :items="states"
-          sort-by="codState"
+          :items="cinemas"
+          sort-by="name"
           class="elevation-1"
           disable-pagination
         >
           <template v-slot:top>
             <v-toolbar flat>
-              <v-toolbar-title>States</v-toolbar-title>
+              <v-toolbar-title>Cinemas</v-toolbar-title>
               <v-divider class="mx-4" inset vertical></v-divider>
               <v-spacer></v-spacer>
               
@@ -29,10 +29,22 @@
                       <v-container>
                         <v-row>
                           <v-col cols="12" sm="12" md="6">
-                            <v-text-field v-model="editedItem.name" label="State name" :rules="nameRules" />
+                            <v-text-field v-model="editedItem.name" label="Cinema name" :rules="nameRules" />
                           </v-col>
                           <v-col cols="12" sm="12" md="6">
-                            <v-text-field v-model="editedItem.codState" label="State code" :rules="codStateRules" />
+                            <v-select :items="cities" item-text="fullname" item-value="id" label="City" :rules="cityRules" v-model="editedItem.city.id"></v-select>
+                          </v-col>
+                          <v-col cols="12" sm="12" md="6">
+                            <v-text-field v-model="editedItem.address" label="Cinema address" :rules="addressRules" />
+                          </v-col>
+                          <v-col cols="12" sm="12" md="6">
+                            <v-file-input show-size truncate-length="30" accept="image/*" label="Cinema Image" prepend-icon="mdi-camera" :rules="imageRules" />
+                          </v-col>
+                          <v-col cols="12" sm="12" md="6">
+                            <v-switch v-model="editedItem.enabled" label="Enabled" />
+                          </v-col>
+                          <v-col cols="12" sm="12" md="6">
+                            <v-text-field v-model="editedItem.image" label="Image" disabled />
                           </v-col>
                         </v-row>
                       </v-container>
@@ -66,6 +78,15 @@
             <v-icon small class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
             <v-icon small @click="deleteItem(item)">mdi-delete</v-icon>
           </template>
+
+          <template v-slot:[`item.enabled`]="{ item }">
+            <v-simple-checkbox v-model="item.enabled" disabled />
+          </template>
+
+          <template v-slot:[`item.image`]="{ item }">
+            <v-img :src="item.fullimage" :alt="item.image" max-height="64" max-width="48" />
+          </template>
+
           <template v-slot:no-data>
             <v-btn
               color="primary"
@@ -89,38 +110,75 @@
   export default {
     data () {
       return {
-        codStateRules: [
-          v => !!v || 'State code is required',
-          v => v.length === 2 || 'State code length must be 2 characters',
+        cityRules: [
+          v => !!v || 'City is required',
         ],
         nameRules: [
-          v => !!v || 'State name is required',
-          v => v.length > 3 || 'State name length must be more  than 3 characters',
+          v => !!v || 'Cinema name is required',
+          v => v.length > 4 || 'Cinema name length must be more  than 4 characters',
+        ],
+        addressRules: [
+          v => !!v || 'Cinema address is required',
+          v => v.length > 5 || 'Cinema address length must be more  than 5 characters',
+        ],
+        imageRules: [
+          v => !v || v.size < 2000000 || 'Image size should be less than 2 MB!',
         ],
         valid: false,
         headers: [
           {
-            text: 'State Name',
+            text: 'Cinema Name',
             align: 'start',
             sortable: true,
             value: 'name',
           },
-          { text: 'Code', value: 'codState' },
+          { text: 'Address', value: 'address' },
+          { text: 'City', value: 'city.name', sortable: true, },
+          { text: 'State', value: 'city.state.codState', sortable: true, },
+          { text: 'Enabled', value: 'enabled', sortable: true, },
+          { text: 'Image', value: 'image', sortable: true, },
           { text: 'Actions', value: 'actions', sortable: false },
         ],
-        states: [],
+        cities: [],
+        cinemas: [],
         dialog: false,
         dialogDelete: false,
         editedIndex: -1,
         editedItem: {
           id: 0,
           name: '',
-          codState: '',
+          address: '',
+          image: '',
+          fullimage: '',
+          enabled: true,
+          city: {
+              id: 0,
+              name: '',
+              fullname: '',
+              state: {
+                  id: 0,
+                  name: '',
+                  codState: '',
+              }, 
+          },
         },
         defaultItem: {
           id: 0,
           name: '',
-          codState: '',
+          address: '',
+          image: '',
+          fullimage: '',
+          enabled: true,
+          city: {
+              id: 0,
+              name: '',
+              fullname: '',
+              state: {
+                  id: 0,
+                  name: '',
+                  codState: '',
+              }, 
+          },
         },
       }
     },
@@ -142,36 +200,51 @@
     },
     methods: {
       initialize () {
-        getAll('State')
+        getAll('City')
         .then((res) => {
-          this.states = res.data;
+            this.cities = res.data;
+            this.cities.forEach(function(city) {
+                city.fullname = city.name + ' - ' + city.state.codState;
+            });
         })
         .catch((error) => {
           console.log(error);
-            this.$swal.fire({ title: 'Error', text: 'Error getting states list', icon: 'error'});
+            this.$swal.fire({ title: 'Error', text: 'Error getting cities list', icon: 'error'});
+        });
+        getAll('Cinema')
+        .then((res) => {
+            this.cinemas = res.data;
+            this.cinemas.forEach(function(cinema) {
+                cinema.city.fullname = cinema.city.name + ' - ' + cinema.city.state.codState;
+                cinema.fullimage = process.env.VUE_APP_ASSETS_URL + cinema.image;
+            });
+        })
+        .catch((error) => {
+          console.log(error);
+            this.$swal.fire({ title: 'Error', text: 'Error getting cinemas list', icon: 'error'});
         });
       },
       editItem (item) {
-        this.editedIndex = this.states.indexOf(item)
+        this.editedIndex = this.cinemas.indexOf(item)
         this.editedItem = Object.assign({}, item)
         this.dialog = true
       },
 
       deleteItem (item) {
-        this.editedIndex = this.states.indexOf(item)
+        this.editedIndex = this.cinemas.indexOf(item)
         this.editedItem = Object.assign({}, item)
         this.dialogDelete = true
       },
 
       deleteItemConfirm () {
-        delEntity('State', this.editedItem)
+        delEntity('Cinema', this.editedItem)
         .then(() => {
             this.initialize();
-            this.$swal.fire({ title: 'Success', text: 'State deleted', icon: 'success'});
+            this.$swal.fire({ title: 'Success', text: 'Cinema deleted', icon: 'success'});
         })
         .catch((error) => {
           console.log(error);
-          this.$swal.fire({ title: 'Error', text: 'Error deleting state', icon: 'error'});
+          this.$swal.fire({ title: 'Error', text: 'Error deleting cinema', icon: 'error'});
         });
         this.closeDelete()
       },
@@ -194,24 +267,24 @@
 
       save () {
         if (this.editedIndex > -1) { // Update
-          updEntity('State', this.editedItem)
+          updEntity('Cinema', this.editedItem)
           .then(() => {
             this.initialize();
-            this.$swal.fire({ title: 'Success', text: 'State updated', icon: 'success'});
+            this.$swal.fire({ title: 'Success', text: 'Cinema updated', icon: 'success'});
           })
           .catch((error) => {
             console.log(error);
-            this.$swal.fire({ title: 'Error', text: 'Error updating state', icon: 'error'});
+            this.$swal.fire({ title: 'Error', text: 'Error updating cinema', icon: 'error'});
           });
         } else { // Add
-          addEntity('State', this.editedItem)
+          addEntity('Cinema', this.editedItem)
           .then(() => {
             this.initialize();
-            this.$swal.fire({ title: 'Success', text: 'State added', icon: 'success'});
+            this.$swal.fire({ title: 'Success', text: 'Cinema added', icon: 'success'});
           })
           .catch((error) => {
             console.log(error);
-            this.$swal.fire({ title: 'Error', text: 'Error adding state', icon: 'error'});
+            this.$swal.fire({ title: 'Error', text: 'Error adding cinema', icon: 'error'});
           });
         }
         this.close()

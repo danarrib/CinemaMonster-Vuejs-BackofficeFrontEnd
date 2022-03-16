@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer app>
+    <v-navigation-drawer app v-model="drawer">
       <v-list>
         <v-list-item
           value="true"
@@ -18,7 +18,7 @@
       </v-list>
     </v-navigation-drawer>
     <v-app-bar app>
-      <v-app-bar-nav-icon></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-app-bar-title>Cinema Monster</v-app-bar-title>
       <v-spacer />
     </v-app-bar>
@@ -55,6 +55,7 @@ export default {
   },
 
   data: () => ({
+    drawer: true,
     // Menu items
     items: [
       { icon: mdiHome, title: 'Home', to: '/' },
@@ -70,16 +71,6 @@ export default {
       { icon: mdiAccountMultiple, title: 'Customers', to: '/customer' },
       { icon: mdiReceipt, title: 'Orders', to: '/order' },
 
-      /*
-Auditorium Types
-Movies
-Movie Genres
-Movie Sessions
-Orders
-Customers
-Payment Methods
-Seat Types
-       */
     ],
   }),
 };
