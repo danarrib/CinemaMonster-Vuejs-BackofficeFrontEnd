@@ -65,7 +65,7 @@ export default {
       { icon: mdiProjectorScreen, title: 'Auditorium Types', to: '/auditoriumtype' },
       { icon: mdiMovie, title: 'Movies', to: '/movie' },
       { icon: mdiMovieCog, title: 'Movie Genres', to: '/moviegenre' },
-      { icon: mdiFilmstrip, title: 'Movie Sessions', to: '/mobiesession' },
+      { icon: mdiFilmstrip, title: 'Movie Sessions', to: '/moviesession' },
       { icon: mdiCreditCardMultiple, title: 'Payment Methods', to: '/paymentmethod' },
       { icon: mdiSeat, title: 'Seat Types', to: '/seattype' },
       { icon: mdiAccountMultiple, title: 'Customers', to: '/customer' },

@@ -4,14 +4,14 @@
       <template>
         <v-data-table
           :headers="headers"
-          :items="cinemas"
+          :items="auditoriums"
           sort-by="name"
           class="elevation-1"
           disable-pagination
         >
           <template v-slot:top>
             <v-toolbar flat>
-              <v-toolbar-title>Cinemas</v-toolbar-title>
+              <v-toolbar-title>Auditoriums for {{ cinema.name }}</v-toolbar-title>
               <v-divider class="mx-4" inset vertical></v-divider>
               <v-spacer></v-spacer>
 
@@ -23,8 +23,7 @@
                     class="mb-2"
                     v-bind="attrs"
                     v-on="on"
-                    >New Item</v-btn
-                  >
+                    >New Item</v-btn>
                 </template>
                 <v-card>
                   <v-card-title>
@@ -38,25 +37,44 @@
                           <v-col cols="12" sm="12" md="6">
                             <v-text-field
                               v-model="editedItem.name"
-                              label="Cinema name"
+                              label="Auditorium name"
                               :rules="nameRules"
                             />
                           </v-col>
                           <v-col cols="12" sm="12" md="6">
                             <v-select
-                              :items="cities"
-                              item-text="fullname"
+                              :items="auditoriumtypes"
+                              item-text="name"
                               item-value="id"
-                              label="City"
-                              :rules="cityRules"
-                              v-model="editedItem.city.id"
+                              label="Type"
+                              :rules="typeRules"
+                              v-model="editedItem.auditoriumType.id"
                             ></v-select>
                           </v-col>
                           <v-col cols="12" sm="12" md="6">
                             <v-text-field
-                              v-model="editedItem.address"
-                              label="Cinema address"
-                              :rules="addressRules"
+                              v-model.number="editedItem.seatRows"
+                              label="Seat Rows"
+                              type="number"
+                              :disabled="editedItem.id !== 0"
+                              :rules="seatRowsColumnsRules"
+                            />
+                          </v-col>
+                          <v-col cols="12" sm="12" md="6">
+                            <v-text-field
+                              v-model.number="editedItem.seatColumns"
+                              label="Seat Columns"
+                              type="number"
+                              :disabled="editedItem.id !== 0"
+                              :rules="seatRowsColumnsRules"
+                            />
+                          </v-col>
+                          <v-col cols="12" sm="12" md="6">
+                            <v-text-field
+                              v-model.number="editedItem.baseTicketPrice"
+                              label="Base Ticket Price"
+                              type="number"
+                              :rules="baseTicketPriceRules"
                             />
                           </v-col>
                           <v-col cols="12" sm="12" md="6">
@@ -64,29 +82,6 @@
                               v-model="editedItem.enabled"
                               label="Enabled"
                             />
-                          </v-col>
-                          <v-col cols="12" sm="12" md="12">
-                            <v-file-input
-                              ref="fileupload"
-                              show-size
-                              truncate-length="30"
-                              accept="image/*"
-                              label="Cinema Image (640 x 480)"
-                              @change="selectFile"
-                              prepend-icon="mdi-camera"
-                            />
-                          </v-col>
-                          <v-col cols="12" sm="12" md="12">
-                            <v-text-field
-                              v-model="editedItem.image"
-                              label="Image"
-                              disabled
-                            />
-                            <v-btn
-                              @click="deleteLocalImage(editedItem)"
-                              :disabled="!editedItem.image"
-                              >Delete image</v-btn
-                            >
                           </v-col>
                         </v-row>
                       </v-container>
@@ -130,22 +125,13 @@
           </template>
 
           <template v-slot:[`item.actions`]="{ item }">
-            <v-icon class="mr-2" @click="auditoriums(item)">mdi-theater</v-icon>
+            <v-icon class="mr-2" @click="seats(item)">mdi-seat</v-icon>
             <v-icon class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
             <v-icon @click="deleteItem(item)">mdi-delete</v-icon>
           </template>
 
           <template v-slot:[`item.enabled`]="{ item }">
             <v-simple-checkbox v-model="item.enabled" disabled />
-          </template>
-
-          <template v-slot:[`item.image`]="{ item }">
-            <v-img
-              :src="item.fullimage"
-              :alt="item.image"
-              max-height="64"
-              max-width="48"
-            />
           </template>
 
           <template v-slot:no-data>
@@ -163,49 +149,17 @@ import {
   addEntity,
   updEntity,
   delEntity,
-  uploadAsset,
 } from "@/apicalls";
 
-async function deleteImage(item, updateEntity) {
-  let filename = item.image.replace("assets/", "");
-  let ret = await delEntity("Asset", { filename });
-  item.image = '';
-  console.log(ret);
-  console.log('File deleted: ' + filename);
-  
-  if(updateEntity) {
-    let ret2 = await updEntity("Cinema", item);
-    console.log(ret2);
-    console.log('Entity updated');
-  }
-}
-
-async function saveEntity(item, currentFile) {
-  // If it's editing, current record already has an image and user are trying to add a new image, then delete current image
-  if (item.id > 0 && currentFile && item.image) {
-    let filename = item.image.replace("assets/", "");
-    let ret = await delEntity("Asset", { filename });
-    item.image = '';
-    console.log(ret);
-    console.log('File deleted: ' + filename);
-  }
-
-  // If user is trying to add new image, upload image and update entity image value
-  if (currentFile) {
-    let ret = await uploadAsset(currentFile);
-    console.log(ret);
-    console.log('File uploaded: ' + ret.data.filename);
-    item.image = 'assets/' + ret.data.filename;
-  }
-
+async function saveEntity(item) {
   // Save entity (insert or update)
   if (item.id > 0) {
-    let ret = await updEntity("Cinema", item);
+    let ret = await updEntity("Auditorium", item);
     console.log(ret);
     console.log('Entity updated');
   }
   else {
-    let ret = await addEntity("Cinema", item);
+    let ret = await addEntity("Auditorium", item);
     console.log(ret);
     console.log('Entity added');
   }
@@ -214,76 +168,76 @@ async function saveEntity(item, currentFile) {
 export default {
   data() {
     return {
-      cityRules: [(v) => !!v || "City is required"],
       nameRules: [
-        (v) => !!v || "Cinema name is required",
-        (v) =>
-          v.length > 4 || "Cinema name length must be more than 4 characters",
+        (v) => !!v || "Auditorium name is required",
+        (v) => v.length > 4 || "Auditorium name length must be more than 4 characters",
       ],
-      addressRules: [
-        (v) => !!v || "Cinema address is required",
-        (v) =>
-          v.length > 5 ||
-          "Cinema address length must be more  than 5 characters",
+      seatRowsColumnsRules: [
+        (v) => !!v || "Auditorium Seat Rows and Columns are required",
+//        (v) => Number.isInteger(v) !== true || "Auditorium Seat Rows and Columns must be integer numbers",
+        (v) => v > 0 || "Auditorium Seat Rows and Columns greater than 0",
       ],
-      imageRules: [
-        (v) => !v || v.size < 2000000 || "Image size should be less than 2 MB!",
+      baseTicketPriceRules: [
+        (v) => !!v || "Auditorium base ticket price is required",
+//        (v) => Number.isNumeric(v) !== true || "Auditorium base ticket price must be numeric",
+        (v) => v > 0 || "Auditorium Seat Rows and Columns greater than 0",
+      ],
+      typeRules: [
+        (v) => !!v || "Auditorium type is required",
       ],
       valid: false,
       headers: [
         {
-          text: "Cinema Name",
+          text: "Auditorium Name",
           align: "start",
           sortable: true,
           value: "name",
         },
-        { text: "Address", value: "address" },
-        { text: "City", value: "city.name", sortable: true },
-        { text: "State", value: "city.state.codState", sortable: true },
+        { text: "Type", value: "auditoriumType.name", sortable: true },
+        { text: "Seat Rows", value: "seatRows", sortable: true },
+        { text: "Seat Columns", value: "seatColumns", sortable: true },
         { text: "Enabled", value: "enabled", sortable: true },
-        { text: "Image", value: "image", sortable: false },
         { text: "Actions", value: "actions", sortable: false },
       ],
-      cities: [],
-      cinemas: [],
+      auditoriumtypes: [],
+      auditoriums: [],
       dialog: false,
-      currentFile: undefined,
       dialogDelete: false,
       editedIndex: -1,
+      cinema: {
+          id: 1,
+          name: 'Test cinema',
+      },
       editedItem: {
         id: 0,
-        name: "",
-        address: "",
-        image: "",
-        fullimage: "",
+        name: '',
+        seatRows: 0,
+        seatColumns: 0,
+        baseTicketPrice: 0,
         enabled: true,
-        city: {
+        auditoriumType: {
           id: 0,
           name: "",
-          fullname: "",
-          state: {
-            id: 0,
-            name: "",
-            codState: "",
-          },
+        },
+        cinema: {
+          id: 0,
+          name: "",
         },
       },
       defaultItem: {
         id: 0,
-        name: "",
-        address: "",
-        image: "",
-        fullimage: "",
+        name: '',
+        seatRows: 0,
+        seatColumns: 0,
+        baseTicketPrice: 0,
         enabled: true,
-        city: {
+        auditoriumType: {
           id: 0,
           name: "",
-          fullname: "",
-          state: {
-            id: 0,
-            name: "",
-            codState: "",
-          },
+        },
+        cinema: {
+          id: 0,
+          name: "",
         },
       },
     };
@@ -306,65 +260,65 @@ export default {
   },
   methods: {
     initialize() {
-      getAll("City")
+      this.cinema.id = this.$route.params.cinemaId;
+      getAll("Cinema/" + this.cinema.id)
         .then((res) => {
-          this.cities = res.data;
-          this.cities.forEach(function (city) {
-            city.fullname = city.name + " - " + city.state.codState;
-          });
+          this.cinema = res.data;
         })
         .catch((error) => {
           console.log(error);
           this.$swal.fire({
             title: "Error",
-            text: "Error getting cities list",
+            text: "Error getting cinema information",
             icon: "error",
           });
         });
-      getAll("Cinema")
+      getAll("Auditorium/byCinema/" + this.cinema.id)
         .then((res) => {
-          this.cinemas = res.data;
-          this.cinemas.forEach(function (cinema) {
-            cinema.city.fullname =
-              cinema.city.name + " - " + cinema.city.state.codState;
-            cinema.fullimage = process.env.VUE_APP_ASSETS_URL + cinema.image;
-          });
+          this.auditoriums = res.data;
         })
         .catch((error) => {
           console.log(error);
           this.$swal.fire({
             title: "Error",
-            text: "Error getting cinemas list",
+            text: "Error getting auditoriums list",
             icon: "error",
           });
         });
-    },
-    selectFile(file) {
-      this.currentFile = file;
+      getAll("AuditoriumType")
+        .then((res) => {
+          this.auditoriumtypes = res.data;
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$swal.fire({
+            title: "Error",
+            text: "Error getting auditorium types list",
+            icon: "error",
+          });
+        });
     },
     editItem(item) {
-      this.editedIndex = this.cinemas.indexOf(item);
+      this.editedIndex = this.auditoriums.indexOf(item);
       this.editedItem = Object.assign({}, item);
+      this.editedItem.cinema.id = this.cinema.id;
       this.dialog = true;
-      this.currentFile = undefined;
     },
     deleteItem(item) {
-      this.editedIndex = this.cinemas.indexOf(item);
+      this.editedIndex = this.auditoriums.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.dialogDelete = true;
     },
+    seats(item) {
+        this.$router.push(`/seat/${item.id}`);
+    },
     deleteItemConfirm() {
-      // if there's an image, delete it
-      if (this.editedItem.image) {
-        deleteImage(this.editedItem, false);
-      }
-
-      delEntity("Cinema", this.editedItem)
+      delEntity("Auditorium", this.editedItem)
       .then(() => {
         this.initialize();
         this.$swal.fire({
           title: "Success",
-          text: "Cinema deleted",
+          text: "Auditorium deleted",
           icon: "success",
         });
       })
@@ -372,22 +326,15 @@ export default {
         console.log(error);
         this.$swal.fire({
           title: "Error",
-          text: "Error deleting cinema",
+          text: "Error deleting auditorium",
           icon: "error",
         });
       });
       
       this.closeDelete();
     },
-    auditoriums(item) {
-      this.$router.push(`/auditorium/${item.id}`);
-    },
     close() {
       this.dialog = false;
-      if (this.currentFile) {
-        this.currentFile = undefined;
-        this.$refs.fileupload.reset();
-      }
       this.$nextTick(() => {
         this.editedItem = Object.assign({}, this.defaultItem);
         this.editedIndex = -1;
@@ -395,37 +342,20 @@ export default {
     },
     closeDelete() {
       this.dialogDelete = false;
-      if (this.currentFile) {
-        this.currentFile = undefined;
-        this.$refs.fileupload.reset();
-      }
       this.$nextTick(() => {
         this.editedItem = Object.assign({}, this.defaultItem);
         this.editedIndex = -1;
       });
     },
-    deleteLocalImage(item) {
-      deleteImage(item, true)
-      .then(() => {
-          this.initialize();
-
-          this.$swal.fire({
-            title: "Success",
-            text: "Image deleted",
-            icon: "success",
-          });
-
-          this.close();
-      });
-    },
     save() {
-      saveEntity(this.editedItem, this.currentFile)
+      this.editedItem.cinema.id = this.cinema.id;
+      saveEntity(this.editedItem)
       .then(() => {
         this.initialize();
 
         this.$swal.fire({
           title: "Success",
-          text: "Cinema saved sucessfully",
+          text: "Auditorium saved sucessfully",
           icon: "success",
         });
 
@@ -436,7 +366,7 @@ export default {
 
           this.$swal.fire({
             title: "Error",
-            text: "Error saving Cinema",
+            text: "Error saving Auditorium",
             icon: "error",
           });
 

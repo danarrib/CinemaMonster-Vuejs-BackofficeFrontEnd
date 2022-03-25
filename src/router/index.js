@@ -21,7 +21,11 @@ const routes = [
   { path: '/state', name: 'State', component: () => import('../views/State.vue') },
   { path: '/city', name: 'City', component: () => import('../views/City.vue') },
   { path: '/cinema', name: 'Cinema', component: () => import('../views/Cinema.vue') },
+  { path: '/movie', name: 'Movie', component: () => import('../views/Movie.vue') },
+  { path: '/auditorium/:cinemaId', name: 'Auditorium', component: () => import('../views/Auditorium.vue') },
+  { path: '/seat/:auditoriumId', name: 'Seat', component: () => import('../views/Seat.vue') },
   { path: '/auditoriumtype', name: 'Auditorium Type', component: () => import('../views/AuditoriumType.vue') },
+  { path: '/seattype', name: 'Seat Type', component: () => import('../views/SeatType.vue') },
   { path: '/moviegenre', name: 'Movie Genre', component: () => import('../views/MovieGenre.vue') },
   { path: '/paymentmethod', name: 'Payment Method', component: () => import('../views/PaymentMethod.vue') },
 ]

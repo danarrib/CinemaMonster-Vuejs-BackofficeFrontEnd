@@ -4,14 +4,14 @@
       <template>
         <v-data-table
           :headers="headers"
-          :items="cinemas"
+          :items="movies"
           sort-by="name"
           class="elevation-1"
           disable-pagination
         >
           <template v-slot:top>
             <v-toolbar flat>
-              <v-toolbar-title>Cinemas</v-toolbar-title>
+              <v-toolbar-title>Movies</v-toolbar-title>
               <v-divider class="mx-4" inset vertical></v-divider>
               <v-spacer></v-spacer>
 
@@ -35,34 +35,97 @@
                     <v-form v-model="valid">
                       <v-container>
                         <v-row>
-                          <v-col cols="12" sm="12" md="6">
+                          <v-col cols="12" sm="12" md="12">
                             <v-text-field
                               v-model="editedItem.name"
-                              label="Cinema name"
+                              label="Movie name"
                               :rules="nameRules"
+                            />
+                          </v-col>
+                          <v-col cols="12" sm="12" md="12">
+                            <v-text-field
+                              v-model="editedItem.originalName"
+                              label="Movie original name"
+                              :rules="nameRules"
+                            />
+                          </v-col>
+
+                          <v-col cols="12" sm="12" md="6">
+                            <v-text-field
+                              v-model.number="editedItem.movieYear"
+                              label="Movie Year"
+                              :rules="movieYearRules"
+                              type="number"
+                            />
+                          </v-col>
+
+                          <v-col cols="12" sm="12" md="6">
+                            <v-menu
+                                ref="menu"
+                                v-model="menu"
+                                :close-on-content-click="false"
+                                :return-value.sync="editedItem.premiereDate"
+                                transition="scale-transition"
+                                offset-y
+                                min-width="auto"
+                            >
+                                <template v-slot:activator="{ on, attrs }">
+                                <v-text-field
+                                    v-model="editedItem.premiereDate"
+                                    label="Movie premiere date"
+                                    prepend-icon="mdi-calendar"
+                                    readonly
+                                    v-bind="attrs"
+                                    v-on="on"
+                                ></v-text-field>
+                                </template>
+                                <v-date-picker
+                                v-model="editedItem.premiereDate"
+                                no-title
+                                scrollable
+                                >
+                                <v-spacer></v-spacer>
+                                <v-btn
+                                    text
+                                    color="primary"
+                                    @click="menu = false"
+                                >
+                                    Cancel
+                                </v-btn>
+                                <v-btn
+                                    text
+                                    color="primary"
+                                    @click="$refs.menu.save(editedItem.premiereDate)"
+                                >
+                                    OK
+                                </v-btn>
+                                </v-date-picker>
+                            </v-menu>
+                          </v-col>
+
+                          <v-col cols="12" sm="12" md="6">
+                            <v-text-field
+                              v-model.number="editedItem.durationMinutes"
+                              label="Movie Duration (minutes)"
+                              :rules="movieDurationRules"
+                              type="number"
                             />
                           </v-col>
                           <v-col cols="12" sm="12" md="6">
                             <v-select
-                              :items="cities"
-                              item-text="fullname"
+                              :items="moviegenres"
+                              item-text="name"
                               item-value="id"
-                              label="City"
-                              :rules="cityRules"
-                              v-model="editedItem.city.id"
+                              label="Movie Genre"
+                              :rules="genreRules"
+                              v-model="editedItem.movieGenre.id"
                             ></v-select>
                           </v-col>
-                          <v-col cols="12" sm="12" md="6">
-                            <v-text-field
-                              v-model="editedItem.address"
-                              label="Cinema address"
-                              :rules="addressRules"
-                            />
-                          </v-col>
-                          <v-col cols="12" sm="12" md="6">
-                            <v-switch
-                              v-model="editedItem.enabled"
-                              label="Enabled"
+                          <v-col cols="12" sm="12" md="12">
+                            <v-textarea
+                              v-model="editedItem.synopsis"
+                              label="Movie synopsis"
+                              :rules="synopsisRules"
                             />
                           </v-col>
                           <v-col cols="12" sm="12" md="12">
@@ -71,21 +134,21 @@
                               show-size
                               truncate-length="30"
                               accept="image/*"
-                              label="Cinema Image (640 x 480)"
+                              label="Movie Poster (300 x 445)"
                               @change="selectFile"
                               prepend-icon="mdi-camera"
                             />
                           </v-col>
                           <v-col cols="12" sm="12" md="12">
                             <v-text-field
-                              v-model="editedItem.image"
-                              label="Image"
+                              v-model="editedItem.poster"
+                              label="Poster"
                               disabled
                             />
                             <v-btn
                               @click="deleteLocalImage(editedItem)"
-                              :disabled="!editedItem.image"
-                              >Delete image</v-btn
+                              :disabled="!editedItem.poster"
+                              >Delete poster</v-btn
                             >
                           </v-col>
                         </v-row>
@@ -130,19 +193,14 @@
           </template>
 
           <template v-slot:[`item.actions`]="{ item }">
-            <v-icon class="mr-2" @click="auditoriums(item)">mdi-theater</v-icon>
             <v-icon class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
             <v-icon @click="deleteItem(item)">mdi-delete</v-icon>
           </template>
 
-          <template v-slot:[`item.enabled`]="{ item }">
-            <v-simple-checkbox v-model="item.enabled" disabled />
-          </template>
-
-          <template v-slot:[`item.image`]="{ item }">
+          <template v-slot:[`item.poster`]="{ item }">
             <v-img
-              :src="item.fullimage"
-              :alt="item.image"
+              :src="item.fullposter"
+              :alt="item.poster"
               max-height="64"
               max-width="48"
             />
@@ -167,45 +225,45 @@ import {
 } from "@/apicalls";
 
 async function deleteImage(item, updateEntity) {
-  let filename = item.image.replace("assets/", "");
+  let filename = item.poster.replace("assets/", "");
   let ret = await delEntity("Asset", { filename });
-  item.image = '';
+  item.poster = '';
   console.log(ret);
   console.log('File deleted: ' + filename);
   
   if(updateEntity) {
-    let ret2 = await updEntity("Cinema", item);
+    let ret2 = await updEntity("Movie", item);
     console.log(ret2);
     console.log('Entity updated');
   }
 }
 
 async function saveEntity(item, currentFile) {
-  // If it's editing, current record already has an image and user are trying to add a new image, then delete current image
-  if (item.id > 0 && currentFile && item.image) {
-    let filename = item.image.replace("assets/", "");
+  // If it's editing, current record already has an poster and user are trying to add a new poster, then delete current poster
+  if (item.id > 0 && currentFile && item.poster) {
+    let filename = item.poster.replace("assets/", "");
     let ret = await delEntity("Asset", { filename });
-    item.image = '';
+    item.poster = '';
     console.log(ret);
     console.log('File deleted: ' + filename);
   }
 
-  // If user is trying to add new image, upload image and update entity image value
+  // If user is trying to add new poster, upload poster and update entity poster value
   if (currentFile) {
     let ret = await uploadAsset(currentFile);
     console.log(ret);
     console.log('File uploaded: ' + ret.data.filename);
-    item.image = 'assets/' + ret.data.filename;
+    item.poster = 'assets/' + ret.data.filename;
   }
 
   // Save entity (insert or update)
   if (item.id > 0) {
-    let ret = await updEntity("Cinema", item);
+    let ret = await updEntity("Movie", item);
     console.log(ret);
     console.log('Entity updated');
   }
   else {
-    let ret = await addEntity("Cinema", item);
+    let ret = await addEntity("Movie", item);
     console.log(ret);
     console.log('Entity added');
   }
@@ -214,77 +272,75 @@ async function saveEntity(item, currentFile) {
 export default {
   data() {
     return {
-      cityRules: [(v) => !!v || "City is required"],
+      genreRules: [(v) => !!v || "Movie genre is required"],
       nameRules: [
-        (v) => !!v || "Cinema name is required",
-        (v) =>
-          v.length > 4 || "Cinema name length must be more than 4 characters",
+        (v) => !!v || "Movie name is required",
+        (v) => v.length > 4 || "Movie name length must be more than 4 characters",
       ],
-      addressRules: [
-        (v) => !!v || "Cinema address is required",
-        (v) =>
-          v.length > 5 ||
-          "Cinema address length must be more  than 5 characters",
+      synopsisRules: [
+        (v) => !!v || "Movie synopsis is required",
+        (v) => v.length > 5 || "Movie synopsis length must be more than 5 characters",
       ],
-      imageRules: [
+      movieYearRules: [
+        (v) => !!v || "Movie year is required",
+        (v) => v > 1800 || "Movie year must be a valid year",
+      ],
+      movieDurationRules: [
+        (v) => !!v || "Movie duration is required",
+        (v) => v > 0 || "Movie duration must be greater than 0",
+      ],
+      premiereDateRules: [
+        (v) => !!v || "Movie premiere date is required",
+        (v) => v.length > 4 || "Movie premiere date length must be more than 4 characters",
+      ],
+      posterRules: [
         (v) => !v || v.size < 2000000 || "Image size should be less than 2 MB!",
       ],
       valid: false,
       headers: [
-        {
-          text: "Cinema Name",
-          align: "start",
-          sortable: true,
-          value: "name",
-        },
-        { text: "Address", value: "address" },
-        { text: "City", value: "city.name", sortable: true },
-        { text: "State", value: "city.state.codState", sortable: true },
-        { text: "Enabled", value: "enabled", sortable: true },
-        { text: "Image", value: "image", sortable: false },
+        { text: "Movie Name", align: "start", sortable: true, value: "name", },
+        { text: "Movie Original Name", align: "start", sortable: true, value: "originalName", },
+        { text: "Premiere Date", value: "premiereDate" },
+        { text: "Year", value: "movieYear", sortable: true },
+        { text: "Duration", value: "durationMinutes", sortable: true },
+        { text: "Genre", value: "movieGenre.name", sortable: true },
+        { text: "Poster", value: "poster", sortable: false },
         { text: "Actions", value: "actions", sortable: false },
       ],
-      cities: [],
-      cinemas: [],
+      moviegenres: [],
+      movies: [],
       dialog: false,
+      menu: false,
       currentFile: undefined,
       dialogDelete: false,
       editedIndex: -1,
       editedItem: {
-        id: 0,
         name: "",
-        address: "",
-        image: "",
-        fullimage: "",
-        enabled: true,
-        city: {
-          id: 0,
-          name: "",
-          fullname: "",
-          state: {
-            id: 0,
+        originalName: "",
+        poster: "",
+        premiereDate: "",
+        movieYear: 0,
+        synopsis: "",
+        durationMinutes: 0,
+        movieGenre: {
             name: "",
-            codState: "",
-          },
+            id: 0
         },
+        id: 0
       },
       defaultItem: {
-        id: 0,
         name: "",
-        address: "",
-        image: "",
-        fullimage: "",
-        enabled: true,
-        city: {
-          id: 0,
-          name: "",
-          fullname: "",
-          state: {
-            id: 0,
+        originalName: "",
+        poster: "",
+        premiereDate: "",
+        movieYear: 0,
+        synopsis: "",
+        durationMinutes: 0,
+        movieGenre: {
             name: "",
-            codState: "",
-          },
+            id: 0
         },
+        id: 0
       },
     };
   },
@@ -306,35 +362,31 @@ export default {
   },
   methods: {
     initialize() {
-      getAll("City")
+      getAll("MovieGenre")
         .then((res) => {
-          this.cities = res.data;
-          this.cities.forEach(function (city) {
-            city.fullname = city.name + " - " + city.state.codState;
-          });
+          this.moviegenres = res.data;
         })
         .catch((error) => {
           console.log(error);
           this.$swal.fire({
             title: "Error",
-            text: "Error getting cities list",
+            text: "Error getting movie genres list",
             icon: "error",
           });
         });
-      getAll("Cinema")
+      getAll("Movie")
         .then((res) => {
-          this.cinemas = res.data;
-          this.cinemas.forEach(function (cinema) {
-            cinema.city.fullname =
-              cinema.city.name + " - " + cinema.city.state.codState;
-            cinema.fullimage = process.env.VUE_APP_ASSETS_URL + cinema.image;
+          this.movies = res.data;
+          this.movies.forEach(function (movie) {
+            movie.fullposter = process.env.VUE_APP_ASSETS_URL + movie.poster;
+            movie.premiereDate = movie.premiereDate.substr(0, 10);
           });
         })
         .catch((error) => {
           console.log(error);
           this.$swal.fire({
             title: "Error",
-            text: "Error getting cinemas list",
+            text: "Error getting movies list",
             icon: "error",
           });
         });
@@ -343,28 +395,28 @@ export default {
       this.currentFile = file;
     },
     editItem(item) {
-      this.editedIndex = this.cinemas.indexOf(item);
+      this.editedIndex = this.movies.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.dialog = true;
       this.currentFile = undefined;
     },
     deleteItem(item) {
-      this.editedIndex = this.cinemas.indexOf(item);
+      this.editedIndex = this.movies.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      // if there's an image, delete it
-      if (this.editedItem.image) {
+      // if there's an poster, delete it
+      if (this.editedItem.poster) {
         deleteImage(this.editedItem, false);
       }
 
-      delEntity("Cinema", this.editedItem)
+      delEntity("Movie", this.editedItem)
       .then(() => {
         this.initialize();
         this.$swal.fire({
           title: "Success",
-          text: "Cinema deleted",
+          text: "Movie deleted",
           icon: "success",
         });
       })
@@ -372,15 +424,12 @@ export default {
         console.log(error);
         this.$swal.fire({
           title: "Error",
-          text: "Error deleting cinema",
+          text: "Error deleting movie",
           icon: "error",
         });
       });
       
       this.closeDelete();
-    },
-    auditoriums(item) {
-      this.$router.push(`/auditorium/${item.id}`);
     },
     close() {
       this.dialog = false;
@@ -425,7 +474,7 @@ export default {
 
         this.$swal.fire({
           title: "Success",
-          text: "Cinema saved sucessfully",
+          text: "Movie saved sucessfully",
           icon: "success",
         });
 
@@ -436,7 +485,7 @@ export default {
 
           this.$swal.fire({
             title: "Error",
-            text: "Error saving Cinema",
+            text: "Error saving Movie",
             icon: "error",
           });
 

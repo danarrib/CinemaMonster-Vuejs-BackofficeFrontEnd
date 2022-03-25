@@ -63,8 +63,8 @@
           </template>
 
           <template v-slot:[`item.actions`]="{ item }">
-            <v-icon small class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
-            <v-icon small @click="deleteItem(item)">mdi-delete</v-icon>
+            <v-icon class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
+            <v-icon @click="deleteItem(item)">mdi-delete</v-icon>
           </template>
           <template v-slot:no-data>
             <v-btn
@@ -94,7 +94,7 @@
         ],
         nameRules: [
           v => !!v || 'City name is required',
-          v => v.length > 3 || 'City name length must be more  than 3 characters',
+          v => v.length > 3 || 'City name length must be more than 3 characters',
         ],
         valid: false,
         headers: [

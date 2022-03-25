@@ -23,10 +23,22 @@ const delEntity = async (entityName, entityData) => {
     return data;
 }
 
+const uploadAsset = async (file) => {
+    let formData = new FormData();
+    formData.append("formFile", file);
+    let result = await axios.post(BRAVO_API_URL + "Asset", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    });
+    return result;
+}
+
 
 export {
     getAll,
     addEntity,
     updEntity,
-    delEntity
+    delEntity,
+    uploadAsset,
 }
